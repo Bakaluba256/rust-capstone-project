@@ -99,7 +99,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let block_height = blockinfo.height;
 
     // Write results to out.txt
-    let mut file = File::create("out.txt")?;
+    let mut file = File::create("../../out.txt")?;
     writeln!(file, "{txid}")?;
     let checked_address = miner_input_address.clone().assume_checked();
     writeln!(file, "{checked_address}")?;
