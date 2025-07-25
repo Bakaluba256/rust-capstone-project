@@ -17,7 +17,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         rpc.create_wallet("Miner", None, None, None, None)?;
     }
     let miner = Client::new(
-        &format!("{}/wallet/Miner", RPC_URL),
+        &format!("{RPC_URL}/wallet/Miner"),
         Auth::UserPass(RPC_USER.into(), RPC_PASS.into()),
     )?;
 
@@ -26,7 +26,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         rpc.create_wallet("Trader", None, None, None, None)?;
     }
     let trader = Client::new(
-        &format!("{}/wallet/Trader", RPC_URL),
+        &format!("{RPC_URL}/wallet/Trader"),
         Auth::UserPass(RPC_USER.into(), RPC_PASS.into()),
     )?;
 
