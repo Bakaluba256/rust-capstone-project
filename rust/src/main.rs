@@ -16,7 +16,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         rpc.create_wallet("Miner", None, None, None, None)?;
     }
     let miner = Client::new(
-        &format!("{}/wallet/Miner", RPC_URL),
+        &format!("{RPC_URL}/wallet/Miner"),
         Auth::UserPass(RPC_USER.into(), RPC_PASS.into()),
     )?;
 
@@ -25,7 +25,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         rpc.create_wallet("Trader", None, None, None, None)?;
     }
     let trader = Client::new(
-        &format!("{}/wallet/Trader", RPC_URL),
+        &format!("{RPC_URL}/wallet/Trader"),
         Auth::UserPass(RPC_USER.into(), RPC_PASS.into()),
     )?;
 
@@ -40,7 +40,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
         rpc.generate_to_address(1, &miner_addr)?;
         blocks += 1;
     }
-    println!("Mined {} blocks to get spendable balance", blocks);
+    println!("Mined {blocks} blocks to get spendable balance");
 
     // Create a receiving address for the Trader
     let trader_addr = trader
@@ -100,16 +100,17 @@ fn main() -> bitcoincore_rpc::Result<()> {
 
     // Write results to out.txt
     let mut file = File::create("out.txt")?;
-    writeln!(file, "{}", txid)?;
-    writeln!(file, "{}", miner_input_address.clone().assume_checked())?;
-    writeln!(file, "{}", miner_input_amount)?;
-    writeln!(file, "{}", trader_output_address)?;
-    writeln!(file, "{}", trader_output_amount)?;
-    writeln!(file, "{}", miner_change_address)?;
-    writeln!(file, "{}", miner_change_amount)?;
-    writeln!(file, "{}", fee)?;
-    writeln!(file, "{}", block_height)?;
-    writeln!(file, "{}", blockhash)?;
+    writeln!(file, "{txid}")?;
+    let checked_address = miner_input_address.clone().assume_checked();
+    writeln!(file, "{checked_address}")?;
+    writeln!(file, "{miner_input_amount}")?;
+    writeln!(file, "{trader_output_address}")?;
+    writeln!(file, "{trader_output_amount}")?;
+    writeln!(file, "{miner_change_address}")?;
+    writeln!(file, "{miner_change_amount}")?;
+    writeln!(file, "{fee}")?;
+    writeln!(file, "{block_height}")?;
+    writeln!(file, "{blockhash}")?;
 
     println!("out.txt generated successfully");
 
