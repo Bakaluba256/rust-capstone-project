@@ -1,65 +1,113 @@
-#![allow(unused)]
-use bitcoin::hex::DisplayHex;
-use bitcoincore_rpc::bitcoin::Amount;
-use bitcoincore_rpc::{Auth, Client, RpcApi};
-use serde::Deserialize;
-use serde_json::json;
+use bitcoin::Amount;
+use bitcoincore_rpc::{Auth, Client, RpcApi, json};
 use std::fs::File;
 use std::io::Write;
 
-// Node access params
-const RPC_URL: &str = "http://127.0.0.1:18443"; // Default regtest RPC port
+const RPC_URL: &str = "http://127.0.0.1:18443";
 const RPC_USER: &str = "alice";
 const RPC_PASS: &str = "password";
 
-// You can use calls not provided in RPC lib API using the generic `call` function.
-// An example of using the `send` RPC call, which doesn't have exposed API.
-// You can also use serde_json `Deserialize` derivation to capture the returned json result.
-fn send(rpc: &Client, addr: &str) -> bitcoincore_rpc::Result<String> {
-    let args = [
-        json!([{addr : 100 }]), // recipient address
-        json!(null),            // conf target
-        json!(null),            // estimate mode
-        json!(null),            // fee rate in sats/vb
-        json!(null),            // Empty option object
-    ];
-
-    #[derive(Deserialize)]
-    struct SendResult {
-        complete: bool,
-        txid: String,
-    }
-    let send_result = rpc.call::<SendResult>("send", &args)?;
-    assert!(send_result.complete);
-    Ok(send_result.txid)
-}
-
 fn main() -> bitcoincore_rpc::Result<()> {
-    // Connect to Bitcoin Core RPC
-    let rpc = Client::new(
-        RPC_URL,
-        Auth::UserPass(RPC_USER.to_owned(), RPC_PASS.to_owned()),
-    )?;
+    let rpc = Client::new(RPC_URL, Auth::UserPass(RPC_USER.to_string(), RPC_PASS.to_string()))?;
 
-    // Get blockchain info
-    let blockchain_info = rpc.get_blockchain_info()?;
-    println!("Blockchain Info: {:?}", blockchain_info);
+    // Create or load 'Miner' wallet
+    if rpc.list_wallets()?.iter().all(|w| w != "Miner") {
+        rpc.create_wallet("Miner", None, None, None, None)?;
+    }
+    let miner_rpc = Client::new(&format!("{}/wallet/Miner", RPC_URL), Auth::UserPass(RPC_USER.to_string(), RPC_PASS.to_string()))?;
 
-    // Create/Load the wallets, named 'Miner' and 'Trader'. Have logic to optionally create/load them if they do not exist or not loaded already.
+    // Create or load 'Trader' wallet
+    if rpc.list_wallets()?.iter().all(|w| w != "Trader") {
+        rpc.create_wallet("Trader", None, None, None, None)?;
+    }
+    let trader_rpc = Client::new(&format!("{}/wallet/Trader", RPC_URL), Auth::UserPass(RPC_USER.to_string(), RPC_PASS.to_string()))?;
 
-    // Generate spendable balances in the Miner wallet. How many blocks needs to be mined?
+    // Miner: get address and mine blocks to it
+    let miner_address = miner_rpc.get_new_address(Some("Mining Reward"), None)?;
+    let mut blocks_mined = 0;
+    while miner_rpc.get_balance(None, None)? <= Amount::from_btc(0.0)? {
+        rpc.generate_to_address(1, &miner_address)?;
+        blocks_mined += 1;
+    }
 
-    // Load Trader wallet and generate a new address
+    // 💡 Why wallet balance behaves this way:
+    // Coinbase rewards need 100 confirmations to mature in regtest.
+    // Hence, we need to mine 101 blocks to get a spendable balance.
+
+    println!("Blocks mined to get spendable balance: {}", blocks_mined);
+    println!("Miner Balance: {:?}", miner_rpc.get_balance(None, None)?);
+
+    // Trader: generate receiving address
+    let trader_address = trader_rpc.get_new_address(Some("Received"), None)?;
 
     // Send 20 BTC from Miner to Trader
+    let txid = miner_rpc.send_to_address(
+        &trader_address,
+        Amount::from_btc(20.0)?,
+        None, None, None, None, None, None,
+    )?;
 
-    // Check transaction in mempool
+    // Get unconfirmed tx from mempool
+    let mempool_entry = rpc.get_mempool_entry(&txid)?;
+    println!("Mempool entry: {:?}", mempool_entry);
 
-    // Mine 1 block to confirm the transaction
+    // Confirm transaction by mining 1 block
+    rpc.generate_to_address(1, &miner_address)?;
 
-    // Extract all required transaction details
+    // Fetch transaction details
+    let tx_detail = miner_rpc.get_transaction(&txid, Some(true))?;
+    let decoded_tx = tx_detail.details;
+    let block_hash = tx_detail.info.blockhash.unwrap();
+    let block = rpc.get_block_header_info(&block_hash)?;
+    let block_height = block.height;
 
-    // Write the data to ../out.txt in the specified format given in readme.md
+    let raw_tx = miner_rpc.get_raw_transaction_info(&txid, Some(true))?;
+
+    let mut input_address = String::new();
+    let mut input_amount = 0.0;
+    let mut output_trader_address = String::new();
+    let mut output_trader_amount = 0.0;
+    let mut change_address = String::new();
+    let mut change_amount = 0.0;
+
+    for vin in &raw_tx.vin {
+        if let Some(prevout) = &vin.prevout {
+            input_address = prevout.script_pub_key.address.clone().unwrap_or_default();
+            input_amount = prevout.value.to_btc();
+        }
+    }
+
+    for vout in &raw_tx.vout {
+        let value = vout.value.to_btc();
+        if let Some(addresses) = &vout.script_pub_key.addresses {
+            let addr = &addresses[0];
+            if addr == &trader_address.to_string() {
+                output_trader_address = addr.clone();
+                output_trader_amount = value;
+            } else {
+                change_address = addr.clone();
+                change_amount = value;
+            }
+        }
+    }
+
+    let fee = tx_detail.fee.to_btc();
+
+    // Write output file
+    let mut file = File::create("out.txt")?;
+    writeln!(file, "{}", txid)?;
+    writeln!(file, "{}", input_address)?;
+    writeln!(file, "{}", input_amount)?;
+    writeln!(file, "{}", output_trader_address)?;
+    writeln!(file, "{}", output_trader_amount)?;
+    writeln!(file, "{}", change_address)?;
+    writeln!(file, "{}", change_amount)?;
+    writeln!(file, "{}", fee)?;
+    writeln!(file, "{}", block_height)?;
+    writeln!(file, "{}", block_hash)?;
+
+    println!("✅ Transaction details written to out.txt");
 
     Ok(())
 }
+

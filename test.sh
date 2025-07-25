@@ -1,6 +1,6 @@
 # Setup nvm and install pre-req
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-nvm install --lts
+# nvm install --lts
 npm install
 
 set -e  # Exit immediately if any command fails
