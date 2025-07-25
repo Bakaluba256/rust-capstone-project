@@ -105,17 +105,16 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let mut file = File::create("../../out.txt")?;
 
     // Write in the order expected by autograder
-    writeln!(file, "{txid}")?;                                 // 1. txid
+    writeln!(file, "{txid}")?; // 1. txid
     writeln!(file, "{}", miner_input_address.clone().assume_checked())?; // 2. miner_input_address
-    writeln!(file, "{:.8}", miner_input_amount.to_btc())?;     // 3. miner_input_amount
-    writeln!(file, "{trader_output_address}")?;                // 4. trader_output_address
-    writeln!(file, "{trader_output_amount}")?;                 // 5. trader_output_amount
-    writeln!(file, "{miner_change_address}")?;                 // 6. miner_change_address
-    writeln!(file, "{miner_change_amount}")?;                  // 7. miner_change_amount
-    writeln!(file, "{:.8}", fee.abs())?;                       // 8. fee (positive)
-    writeln!(file, "{block_height}")?;                         // 9. block_height
-    writeln!(file, "{blockhash}")?;                            // 10. block_hash
-
+    writeln!(file, "{:.8}", miner_input_amount.to_btc())?; // 3. miner_input_amount
+    writeln!(file, "{trader_output_address}")?; // 4. trader_output_address
+    writeln!(file, "{trader_output_amount}")?; // 5. trader_output_amount
+    writeln!(file, "{miner_change_address}")?; // 6. miner_change_address
+    writeln!(file, "{miner_change_amount}")?; // 7. miner_change_amount
+    writeln!(file, "{:.8}", fee.abs())?; // 8. fee (positive)
+    writeln!(file, "{block_height}")?; // 9. block_height
+    writeln!(file, "{blockhash}")?; // 10. block_hash
 
     println!("out.txt generated successfully");
 
