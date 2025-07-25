@@ -111,7 +111,6 @@
 //     // writeln!(file, "{miner_change_address}")?;
 //     // writeln!(file, "{miner_change_amount}")?;
 //     // writeln!(file, "{fee}")?;
-    
 
 //     writeln!(file, "{}", txid)?;
 //     writeln!(file, "{}", block_height)?;
@@ -124,13 +123,10 @@
 //     writeln!(file, "{}", trader_output_amount)?;
 //     writeln!(file, "{}", fee)?;
 
-
-
 //     println!("out.txt generated successfully");
 
 //     Ok(())
 // }
-
 
 #![allow(unused)]
 use bitcoincore_rpc::bitcoin::{Address, Amount, BlockHash};
@@ -243,16 +239,16 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let mut file = File::create("../../out.txt")?;
 
     // Order is important — must match what the autograder expects!
-    writeln!(file, "{txid}")?;                        // 1. txid
-    writeln!(file, "{block_height}")?;                // 2. block height
-    writeln!(file, "{blockhash}")?;                   // 3. block hash
-    writeln!(file, "{}", decoded.vin.len())?;         // 4. number of inputs
-    writeln!(file, "{}", decoded.vout.len())?;        // 5. number of outputs
-    writeln!(file, "{miner_change_address}")?;        // 6. miner change address
-    writeln!(file, "{miner_change_amount}")?;         // 7. miner change amount
-    writeln!(file, "{trader_output_address}")?;       // 8. trader output address
-    writeln!(file, "{trader_output_amount}")?;        // 9. trader output amount
-    writeln!(file, "{fee}")?;                         // 10. transaction fee
+    writeln!(file, "{txid}")?; // 1. txid
+    writeln!(file, "{block_height}")?; // 2. block height
+    writeln!(file, "{blockhash}")?; // 3. block hash
+    writeln!(file, "{}", decoded.vin.len())?; // 4. number of inputs
+    writeln!(file, "{}", decoded.vout.len())?; // 5. number of outputs
+    writeln!(file, "{miner_change_address}")?; // 6. miner change address
+    writeln!(file, "{miner_change_amount}")?; // 7. miner change amount
+    writeln!(file, "{trader_output_address}")?; // 8. trader output address
+    writeln!(file, "{trader_output_amount}")?; // 9. trader output amount
+    writeln!(file, "{fee}")?; // 10. transaction fee
 
     println!("out.txt generated successfully");
     Ok(())
