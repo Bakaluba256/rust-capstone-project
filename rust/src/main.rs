@@ -52,7 +52,12 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let txid = miner.send_to_address(
         &trader_addr,
         Amount::from_btc(20.0).unwrap(),
-        None, None, None, None, None, None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
     )?;
 
     // Confirm the transaction is in the mempool
@@ -99,16 +104,16 @@ fn main() -> bitcoincore_rpc::Result<()> {
     // Output goes to out.txt — must be in this order for the autograder
     let mut file = File::create("../../out.txt")?;
 
-    writeln!(file, "{}", txid)?;                 
+    writeln!(file, "{}", txid)?;
     writeln!(file, "{}", miner_input_address.clone().assume_checked())?;
-    writeln!(file, "{}", miner_input_amount.to_btc())?; 
-    writeln!(file, "{}", trader_output_address)?; 
-    writeln!(file, "{}", trader_output_amount)?;  
-    writeln!(file, "{}", miner_change_address)?;  
-    writeln!(file, "{}", miner_change_amount)?;   
-    writeln!(file, "{}", fee.abs())?;             
-    writeln!(file, "{}", block_height)?;         
-    writeln!(file, "{}", blockhash)?;             
+    writeln!(file, "{}", miner_input_amount.to_btc())?;
+    writeln!(file, "{}", trader_output_address)?;
+    writeln!(file, "{}", trader_output_amount)?;
+    writeln!(file, "{}", miner_change_address)?;
+    writeln!(file, "{}", miner_change_amount)?;
+    writeln!(file, "{}", fee.abs())?;
+    writeln!(file, "{}", block_height)?;
+    writeln!(file, "{}", blockhash)?;
 
     println!("out.txt generated successfully");
 
