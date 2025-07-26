@@ -140,7 +140,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     writeln!(file, "{trader_output_amount}")?;
     writeln!(file, "{miner_change_address}")?;
     writeln!(file, "{miner_change_amount}")?;
-    writeln!(file, "{:e}", fee)?; // scientific notation
+    writeln!(file, "{fee:e}")?;
     writeln!(file, "{block_height}")?;
     writeln!(file, "{block_hash}")?;
 
