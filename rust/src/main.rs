@@ -13,7 +13,6 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let miner_wallet_name = "Miner";
     let trader_wallet_name = "Trader";
 
-    // Ensure Miner wallet exists
     let loaded_wallets = rpc.list_wallets()?;
     if !loaded_wallets.contains(&miner_wallet_name.to_string())
         && rpc.load_wallet(miner_wallet_name).is_err()
@@ -26,7 +25,6 @@ fn main() -> bitcoincore_rpc::Result<()> {
         Auth::UserPass(RPC_USER.into(), RPC_PASS.into()),
     )?;
 
-    // Ensure Trader wallet exists
     if !rpc
         .list_wallets()?
         .contains(&trader_wallet_name.to_string())
@@ -44,23 +42,20 @@ fn main() -> bitcoincore_rpc::Result<()> {
         .get_new_address(Some("Mining Reward"), None)?
         .assume_checked();
 
-    // Mine blocks until balance is greater than zero
     let mut mined_blocks = 0;
-    while miner.get_balance(None, None)? <= Amount::from_btc(0.0)? {
+    while miner.get_balance(None, None)? <= Amount::from_btc(0.0).unwrap() {
         rpc.generate_to_address(1, &miner_reward_addr)?;
         mined_blocks += 1;
     }
-
     println!("Mined {mined_blocks} blocks to get spendable balance");
 
     let trader_addr = trader
         .get_new_address(Some("Received"), None)?
         .assume_checked();
 
-    // Send BTC from Miner to Trader
     let txid = miner.send_to_address(
         &trader_addr,
-        Amount::from_btc(20.0)?,
+        Amount::from_btc(20.0).unwrap(),
         None,
         None,
         None,
@@ -69,16 +64,18 @@ fn main() -> bitcoincore_rpc::Result<()> {
         None,
     )?;
 
-    // Confirm transaction
+    // Check that tx enters mempool
     let _ = rpc.get_mempool_entry(&txid)?;
-    rpc.generate_to_address(1, &miner_reward_addr)?;
 
+    // Mine 6 blocks to confirm the transaction
+    rpc.generate_to_address(6, &miner_reward_addr)?;
+
+    // Fetch transaction info
     let tx = miner.get_transaction(&txid, Some(true))?;
     let decoded = miner.get_raw_transaction_info(&txid, None)?;
     let block_hash: BlockHash = tx.info.blockhash.unwrap();
     let block_info = rpc.get_block_header_info(&block_hash)?;
 
-    // Input details
     let input_txid = decoded.vin[0].txid.as_ref().expect("Expected txid in vin");
     let input_vout = decoded.vin[0].vout.expect("Expected vout in vin");
 
@@ -92,10 +89,8 @@ fn main() -> bitcoincore_rpc::Result<()> {
         .expect("Input address missing")
         .clone()
         .assume_checked();
-
     let miner_input_amount = prevout.value.to_btc();
 
-    // Output details
     let mut trader_output_address = String::new();
     let mut trader_output_amount = 0.0;
     let mut miner_change_address = String::new();
@@ -120,14 +115,12 @@ fn main() -> bitcoincore_rpc::Result<()> {
         }
     }
 
-    // Calculate fee from tx details
     let fee = tx
         .details
         .iter()
         .map(|d| d.fee.unwrap_or_default())
         .sum::<SignedAmount>()
-        .to_btc()
-        .abs();
+        .to_btc();
 
     let block_height = block_info.height;
 
